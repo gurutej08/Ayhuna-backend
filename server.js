@@ -15,6 +15,10 @@ const io = new Server(httpServer, {
   },
 });
 
+app.get("/", (req, res) => {
+  res.send("Ayhuna backend is running 🚀");
+});
+
 const rooms = {};
 
 io.on("connection", (socket) => {
