@@ -4,6 +4,7 @@ const { Server } = require("socket.io");
 
 const app = express();
 const httpServer = createServer(app);
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
@@ -159,6 +160,6 @@ io.on("connection", (socket) => {
   });
 });
 
-httpServer.listen(3000, () => {
-  console.log("Server running on port 3000");
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
