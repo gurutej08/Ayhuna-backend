@@ -10,7 +10,7 @@ app.use(express.json());
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", 
+    origin: "https://ayhuna.vercel.app", 
     methods: ["GET", "POST"]
 
   },
