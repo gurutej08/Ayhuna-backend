@@ -22,6 +22,18 @@ app.get("/", (req, res) => {
 
 const rooms = {};
 
+function shufflearray(array) {
+  let shuffled = [...array];
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
 
@@ -34,7 +46,9 @@ io.on("connection", (socket) => {
 
     rooms[roomcode] = {
       host: player,
+      allchittis:[],
       players: [{ id: socket.id, name: player, chitti: [] }],
+      gamestart:false,
       gameOver: false,
       winner: null,
     };
@@ -68,19 +82,55 @@ io.on("connection", (socket) => {
   });
 
   // add my chittis
-  socket.on("chitti-into", ({ player, roomcode, chitti, ishost }) => {
-    const room = rooms[roomcode];
-    if (!room || room.gameOver) return;
+  socket.on("chitti-into", ({ player, roomcode, chitti }) => {
+  const room = rooms[roomcode];
+
+  if (!room || room.gameOver) return;
+
+  // Find the player
+  const playerData = room.players.find(
+    (p) => p.name === player
+  );
+
+  if (!playerData) return;
+
+  // Prevent duplicate submissions
+  if (playerData.submitted) return;
+
+  // Add chittis according to player
+  let count = (player === room.host) ? 5 : 4;
+
+  for (let i = 0; i < count; i++) {
+    room.allchittis.push(chitti);
+  }
+
+  playerData.submitted = true;
+
+  console.log("All chittis:", room.allchittis);
+
+  // Distribute when all 17 chittis are collected
+  if (room.allchittis.length === 17) {
+
+    let shuffled = shufflearray(room.allchittis);
+
+    let index = 0;
 
     room.players.forEach((p) => {
-      p.chitti.push(chitti);
-      if (p.name === room.host && ishost) {
-        p.chitti.push(chitti);
+      let count = (p.name === room.host) ? 5 : 4;
+
+      for (let i = 0; i < count; i++) {
+        p.chitti.push(shuffled[index]);
+        index++;
       }
     });
 
-    io.to(roomcode).emit("room-update", room);
-  });
+    room.gamestart = true;
+
+    console.log("Distributed players:", room.players);
+  }
+
+  io.to(roomcode).emit("room-update", room);
+});
 
   // passing chittis
   socket.on("pass-chitti", ({ roomcode, player, index }) => {
